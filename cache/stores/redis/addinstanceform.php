@@ -45,6 +45,10 @@ class cachestore_redis_addinstance_form extends cachestore_addinstance_form {
         $form->setType('cafile', PARAM_TEXT);
         $form->addHelpButton('cafile', 'ca_file', 'cachestore_redis');
 
+        $form->addElement('text', 'username', get_string('username', 'cachestore_redis'));
+        $form->setType('username', PARAM_TEXT);
+        $form->addHelpButton('username', 'username', 'cachestore_redis');
+
         $form->addElement('passwordunmask', 'password', get_string('password', 'cachestore_redis'));
         $form->setType('password', PARAM_RAW);
         $form->addHelpButton('password', 'password', 'cachestore_redis');

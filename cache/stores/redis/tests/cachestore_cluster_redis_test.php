@@ -34,7 +34,9 @@ require_once(__DIR__ . '/../lib.php');
  *
  * define('TEST_CACHESTORE_REDIS_SERVERSCLUSTER', 'localhost:7000,localhost:7001');
  * define('TEST_CACHESTORE_REDIS_ENCRYPTCLUSTER', true);
+ * define('TEST_CACHESTORE_REDIS_AUTHCLUSTER_USERNAME', 'foobared');
  * define('TEST_CACHESTORE_REDIS_AUTHCLUSTER', 'foobared');
+ * define('TEST_CACHESTORE_REDIS_PREFIX', 'mdl');
  * define('TEST_CACHESTORE_REDIS_CASCLUSTER', '/cafile/dir/ca.crt');
  *
  * @package   cachestore_redis
@@ -71,8 +73,14 @@ final class cachestore_cluster_redis_test extends \advanced_testcase {
         if (defined('TEST_CACHESTORE_REDIS_ENCRYPTCLUSTER') && TEST_CACHESTORE_REDIS_ENCRYPTCLUSTER === true) {
             $config['encryption'] = true;
         }
+        if (defined('TEST_CACHESTORE_REDIS_AUTHCLUSTER_USERNAME') && TEST_CACHESTORE_REDIS_AUTHCLUSTER_USERNAME) {
+            $config['username'] = TEST_CACHESTORE_REDIS_AUTHCLUSTER_USERNAME;
+        }
         if (defined('TEST_CACHESTORE_REDIS_AUTHCLUSTER') && TEST_CACHESTORE_REDIS_AUTHCLUSTER) {
             $config['password'] = TEST_CACHESTORE_REDIS_AUTHCLUSTER;
+        }
+        if (defined('TEST_CACHESTORE_REDIS_PREFIX') && TEST_CACHESTORE_REDIS_PREFIX) {
+            $config['prefix'] = TEST_CACHESTORE_REDIS_PREFIX;
         }
         if (defined('TEST_CACHESTORE_REDIS_CASCLUSTER') && TEST_CACHESTORE_REDIS_CASCLUSTER) {
             $config['cafile'] = TEST_CACHESTORE_REDIS_CASCLUSTER;

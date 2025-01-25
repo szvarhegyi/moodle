@@ -216,6 +216,7 @@ class cachestore_redis extends store implements
         $encrypt = (bool) ($configuration['encryption'] ?? false);
         $clustermode = (bool) ($configuration['clustermode'] ?? false);
         $password = !empty($configuration['password']) ? $configuration['password'] : '';
+        $username = !empty($configuration['username']) ? $configuration['username'] : null;
 
         // Set Redis server(s).
         $servers = explode("\n", $configuration['server']);
@@ -274,24 +275,67 @@ class cachestore_redis extends store implements
             if ($clustermode) {
                 if (version_compare($phpredisversion, '6.0.0', '>=')) {
                     // Named parameters are fully supported starting from version 6.0.0.
-                    $redis = new RedisCluster(
-                        name: null,
-                        seeds: $trimmedservers,
-                        timeout: self::CONNECTION_TIMEOUT, // Timeout.
-                        read_timeout: self::CONNECTION_TIMEOUT, // Read timeout.
-                        persistent: true,
-                        auth: $password,
-                        context: !empty($opts) ? $opts : null,
-                    );
+                    if(!is_null($username)) {
+                        $redis = new RedisCluster(
+                            name: null,
+                            seeds: $trimmedservers,
+                            timeout: self::CONNECTION_TIMEOUT, // Timeout.
+                            read_timeout: self::CONNECTION_TIMEOUT, // Read timeout.
+                            persistent: true,
+                            auth: $password,
+                            context: !empty($opts) ? $opts : null,
+                        );
+                    } else {
+                        $redis = new RedisCluster(
+                            name: null,
+                            seeds: $trimmedservers,
+                            timeout: self::CONNECTION_TIMEOUT, // Timeout.
+                            read_timeout: self::CONNECTION_TIMEOUT, // Read timeout.
+                            persistent: true,
+                            context: !empty($opts) ? $opts : null,
+                        );
+
+                        foreach ($trimmedservers as $node) {
+                            if(strpos($node, ':') !== false) {
+                                [$host, $port] = explode(':', $node);
+                            } else {
+                                $host = $node;
+                                $port = 6379;
+                            }
+                            $redis->rawCommand($host, (int)$port, 'AUTH', $username, $password);
+                        }
+                    }
                 } else {
-                    $redis = new RedisCluster(
-                        null,
-                        $trimmedservers,
-                        self::CONNECTION_TIMEOUT,
-                        self::CONNECTION_TIMEOUT,
-                        true, $password,
-                        !empty($opts) ? $opts : null,
-                    );
+                    if(!is_null($username)) {
+                        $redis = new RedisCluster(
+                            null,
+                            $trimmedservers,
+                            self::CONNECTION_TIMEOUT,
+                            self::CONNECTION_TIMEOUT,
+                            true, '',
+                            !empty($opts) ? $opts : null,
+                        );
+
+                        foreach ($trimmedservers as $node) {
+                            if (strpos($node, ':') !== false) {
+                                [$host, $port] = explode(':', $node);
+                            } else {
+                                $host = $node;
+                                $port = 6379;
+                            }
+                            $redis->rawCommand($host, (int)$port, 'AUTH', $username, $password);
+                        }
+                    } else {
+                        $redis = new RedisCluster(
+                            null,
+                            $trimmedservers,
+                            self::CONNECTION_TIMEOUT,
+                            self::CONNECTION_TIMEOUT,
+                            true,
+                            $password,
+                            !empty($opts) ? $opts : null,
+                        );
+                    }
                 }
             } else {
                 $redis = new Redis();
@@ -316,8 +360,10 @@ class cachestore_redis extends store implements
                     );
                 }
 
-                if (!empty($password)) {
+                if (!empty($password) && is_null($username)) {
                     $redis->auth($password);
+                } else if(!is_null($username)) {
+                    $redis->auth([$username, $password]);
                 }
             }
 
@@ -860,6 +906,7 @@ class cachestore_redis extends store implements
         return array(
             'server' => $data->server,
             'prefix' => $data->prefix,
+            'username' => $data->username,
             'password' => $data->password,
             'serializer' => $data->serializer,
             'compressor' => $data->compressor,
@@ -881,6 +928,7 @@ class cachestore_redis extends store implements
         $data['server'] = $config['server'];
         $data['prefix'] = !empty($config['prefix']) ? $config['prefix'] : '';
         $data['password'] = !empty($config['password']) ? $config['password'] : '';
+        $data['username'] = !empty($config['username']) ? $config['username'] : null;
         if (!empty($config['serializer'])) {
             $data['serializer'] = $config['serializer'];
         }
@@ -918,8 +966,14 @@ class cachestore_redis extends store implements
         if (!empty($config->test_serializer)) {
             $configuration['serializer'] = $config->test_serializer;
         }
+        if (!empty($config->test_username)) {
+            $configuration['username'] = $config->test_username;
+        }
         if (!empty($config->test_password)) {
             $configuration['password'] = $config->test_password;
+        }
+        if (!empty($config->test_prefix)) {
+            $configuration['prefix'] = $config->test_prefix;
         }
         if (!empty($config->test_encryption)) {
             $configuration['encryption'] = $config->test_encryption;

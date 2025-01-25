@@ -60,12 +60,35 @@ $settings->add(
         16
     )
 );
+
+$settings->add(
+    new admin_setting_configtext(
+        'cachestore_redis/test_username',
+        get_string('test_username', 'cachestore_redis'),
+        get_string('test_username_desc', 'cachestore_redis'),
+        'default',
+        PARAM_TEXT,
+        16
+    )
+);
+
 $settings->add(
     new admin_setting_configpasswordunmask(
         'cachestore_redis/test_password',
         get_string('test_password', 'cachestore_redis'),
         get_string('test_password_desc', 'cachestore_redis'),
         ''
+    )
+);
+
+$settings->add(
+    new admin_setting_configtext(
+        'cachestore_redis/test_prefix',
+        get_string('test_prefix', 'cachestore_redis'),
+        get_string('test_prefix_desc', 'cachestore_redis'),
+        '',
+        PARAM_TEXT,
+        16
     )
 );
 
